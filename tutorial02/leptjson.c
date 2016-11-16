@@ -4,8 +4,6 @@
 #include <ctype.h>
 #include <math.h>
 #include <errno.h>
-#include <string.h>
-#include <stdio.h>
 
 #define EXPECT(c, ch)       do { assert(*c->json == (ch)); c->json++; } while(0)
 #define ISDIGIT(ch)         ((ch) >= '0' && (ch) <= '9')
