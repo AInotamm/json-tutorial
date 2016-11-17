@@ -128,12 +128,65 @@ static void test_parse_string() {
 }
 
 static void test_parse_array() {
+    int i, j;
     lept_value v;
 
     lept_init(&v);
     EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, "[ ]"));
     EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(&v));
     EXPECT_EQ_SIZE_T(0, lept_get_array_size(&v));
+
+    // [ null , false , true , 123 , "abc" ]
+    EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, "[ null , false , true , 123 , \"abc\" ]"));
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(&v));
+    EXPECT_EQ_SIZE_T(5, lept_get_array_size(&v));
+    for (i = 0; i < 5; i++) {
+        lept_value* ele = lept_get_array_element(&v, i);
+        lept_type type = lept_get_type(ele);
+
+        switch (i) {
+            case 0:
+                EXPECT_EQ_INT(LEPT_NULL, type);
+                break;
+            case 1:
+                EXPECT_EQ_INT(LEPT_FALSE, type);
+                EXPECT_FALSE(lept_get_boolean(ele));
+                break;
+            case 2:
+                EXPECT_EQ_INT(LEPT_TRUE, type);
+                EXPECT_TRUE(lept_get_boolean(ele));
+                break;
+            case 3:
+                EXPECT_EQ_INT(LEPT_NUMBER, type);
+                EXPECT_EQ_DOUBLE(123.0, lept_get_number(ele));
+                break;
+            case 4:
+                EXPECT_EQ_INT(LEPT_STRING, type);
+                EXPECT_EQ_STRING("abc", lept_get_string(ele), 3);
+                break;
+        }
+    }
+
+    // [ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]
+    EXPECT_EQ_INT(LEPT_PARSE_OK, lept_parse(&v, "[ [ ] , [ 0 ] , [ 0 , 1 ] , [ 0 , 1 , 2 ] ]"));
+    EXPECT_EQ_INT(LEPT_ARRAY, lept_get_type(&v));
+    EXPECT_EQ_SIZE_T(4, lept_get_array_size(&v));
+    for (i = 0; i < 4; i++) {
+        lept_value* ele = lept_get_array_element(&v, i);
+        lept_type type = lept_get_type(ele);
+        size_t size = lept_get_array_size(ele);
+
+        EXPECT_EQ_INT(LEPT_ARRAY, type);
+        EXPECT_EQ_INT(i, (int)size);
+
+        for (j = 0; j < size; j++) {
+            lept_value* inner_ele = lept_get_array_element(ele, j);
+
+            EXPECT_EQ_INT(LEPT_NUMBER, lept_get_type(inner_ele));
+            EXPECT_EQ_DOUBLE((double)j, lept_get_number(inner_ele));
+        }
+    }
+
     lept_free(&v);
 }
 
@@ -167,7 +220,7 @@ static void test_parse_invalid_value() {
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "nan");
 
     /* invalid value in array */
-#if 0
+#if 1
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "[1,]");
     TEST_ERROR(LEPT_PARSE_INVALID_VALUE, "[\"a\", nul]");
 #endif
@@ -229,7 +282,7 @@ static void test_parse_invalid_unicode_surrogate() {
 }
 
 static void test_parse_miss_comma_or_square_bracket() {
-#if 0
+#if 1
     TEST_ERROR(LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1");
     TEST_ERROR(LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1}");
     TEST_ERROR(LEPT_PARSE_MISS_COMMA_OR_SQUARE_BRACKET, "[1 2");
